@@ -9,6 +9,10 @@ import { sendMail } from "../utils/mail";
 import { confirmAccount } from "../template/confirm.account.template";
 import mongoose from "mongoose";
 
+export interface ILoginRequest extends Request {
+  user?: any;
+}
+
 /**
  * Handles user signup requests.
  *
@@ -195,4 +199,32 @@ const login = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-export { signup, confirmUserAccount };
+const getUserDetails = asyncHandler(
+  async (req: ILoginRequest, res: Response) => {
+    try {
+      const userDetails = await user
+        .findById(req.user._id)
+        .select("-password -refreshToken");
+      if (!userDetails) {
+        return res.status(404).json(new ApiResponse(404, "User not found"));
+      }
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { user: userDetails },
+            "User details fetched successfully"
+          )
+        );
+    } catch (e) {
+      if (e instanceof ApiError) {
+        return res
+          .status(e.statusCode)
+          .json(new ApiResponse(e.statusCode, {}, e.message));
+      }
+    }
+  }
+);
+
+export { signup, confirmUserAccount, login, getUserDetails };
