@@ -12,6 +12,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   avatarUrl?: string;
+  refreshToken?: string;
   bio?: string;
   displayName?: string;
   socialLinks?: Record<string, string>;
@@ -27,7 +28,7 @@ export interface IUser extends Document {
   isPasswordCorrect: (password: string) => Promise<boolean>;
 }
 
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema({
   username: {
     type: String,
     required: true,
@@ -62,6 +63,9 @@ const userSchema = new Schema<IUser>({
       ref: "Link",
     },
   ],
+  refreshToken: {
+    type: String,
+  },
   confirmed: {
     type: Boolean,
     default: false,
@@ -99,8 +103,8 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.methods.isPasswordCorrect = async function (password: string) {
-  return await bcrypt.compare(password, this.password);
+userSchema.methods.isPasswordCorrect = async function (password: string): Promise<boolean> {
+  return bcrypt.compare(password, this.password);
 };
 
 userSchema.methods.generateAccessToken = function () {
