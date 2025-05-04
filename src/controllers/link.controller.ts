@@ -231,6 +231,8 @@ const getUserLinks = asyncHandler(
           .status(200)
           .json(new ApiResponse(200, [], "User has no links"));
       }
+      user.profileViews = (user.profileViews ?? 0) + 1;
+      await user.save();
       console.log(user);
       return res
         .status(200)

@@ -15,6 +15,7 @@ export interface IUser extends Document {
   refreshToken?: string;
   bio?: string;
   displayName?: string;
+  profileViews?: number;
   socialLinks: any[];
   theme?: {
     color: string;
@@ -66,6 +67,10 @@ const userSchema = new Schema({
   refreshToken: {
     type: String,
   },
+  profileViews: {
+    type: Number,
+    default: 0
+  },  
   confirmed: {
     type: Boolean,
     default: false,
