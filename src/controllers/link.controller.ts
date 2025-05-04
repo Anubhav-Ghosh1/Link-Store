@@ -5,10 +5,15 @@ import { Request, Response } from "express";
 import { ApiResponse } from "../utils/ApiResponse";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
+import QRCode from "qrcode";
 
 export default interface ILinkControllerRequest extends Request {
   user?: any;
 }
+
+export const generateQRCode = async (url: string) => {
+  return await QRCode.toDataURL(url);
+};
 
 /**
  * Handles the creation of a new link.
@@ -208,32 +213,65 @@ const updateLink = asyncHandler(
 
 const getUserLinks = asyncHandler(
   async (req: ILinkControllerRequest, res: Response) => {
-    try
-    {
-        const {username} = req.params;
-        if(!username)
-        {
-            return res.status(400).json(new ApiResponse(400, {}, "Please provide all required fields"));
-        }
-        const user = await User.findOne({username}).select("socialLinks").populate("socialLinks");
-        if(!user)
-        {
-            return res.status(404).json(new ApiResponse(404, {}, "User not found"));
-        }
-        if (user.socialLinks.length === 0)
-        {
-            return res.status(200).json(new ApiResponse(200, [], "User has no links"));
-        }
-        console.log(user);
-        return res.status(200).json(new ApiResponse(200, user, "User links fetched successfully"));
+    try {
+      const { username } = req.params;
+      if (!username) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, "Please provide all required fields"));
+      }
+      const user = await User.findOne({ username })
+        .select("socialLinks")
+        .populate("socialLinks");
+      if (!user) {
+        return res.status(404).json(new ApiResponse(404, {}, "User not found"));
+      }
+      if (user.socialLinks.length === 0) {
+        return res
+          .status(200)
+          .json(new ApiResponse(200, [], "User has no links"));
+      }
+      console.log(user);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, user, "User links fetched successfully"));
+    } catch (e) {
+      if (e instanceof ApiError) {
+        return res
+          .status(e.statusCode)
+          .json(new ApiResponse(e.statusCode, {}, e.message));
+      }
     }
-    catch(e)
-    {
-        if(e instanceof ApiError)
-        {
-            return res.status(e.statusCode).json(new ApiResponse(e.statusCode, {}, e.message));
-        }
+  }
+);
+/**
+ * Handles the generation of a QR code for the user's profile URL.
+ *
+ * @param req - The HTTP request object containing the user details.
+ * @param res - The HTTP response object used to send the response back to the client.
+ *
+ * @returns A JSON response containing the generated QR code data URL.
+ */
+export const getQRCode = asyncHandler(
+  async (req: ILinkControllerRequest, res: Response) => {
+    try {
+      const baseUrl = process.env.FRONTEND_URL;
+      const profileUrl = `${baseUrl}/@${req.user?.username}`;
+      const qr = await generateQRCode(profileUrl);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, qr, "QR code generated successfully"));
+    } catch (e) {
+      if (e instanceof ApiError) {
+        return res
+          .status(e.statusCode)
+          .json(new ApiResponse(e.statusCode, {}, e.message));
+      }
+      return res
+        .status(500)
+        .json(new ApiResponse(500, {}, "Internal server error"));
     }
-  });
+  }
+);
 
 export { createLink, deleteLink, updateLink, getUserLinks };
