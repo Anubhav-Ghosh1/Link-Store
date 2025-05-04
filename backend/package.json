@@ -4,6 +4,9 @@
   "description": "Linktree Clone Built Using NextJS and MERN",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "dev": "nodemon --exec tsc --watch",
+    "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,6 +23,7 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.6.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -28,6 +32,7 @@
     "link-preview-js": "^3.0.14",
     "mongoose": "^8.14.1",
     "nodemailer": "^6.10.1",
+    "nodemon": "^3.1.10",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

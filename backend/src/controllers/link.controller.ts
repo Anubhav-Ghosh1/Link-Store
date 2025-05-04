@@ -310,7 +310,8 @@ const getQRCode = asyncHandler(
   async (req: ILinkControllerRequest, res: Response) => {
     try {
       const baseUrl = process.env.FRONTEND_URL;
-      const profileUrl = `${baseUrl}/@${req.user?.username}`;
+      const { username } = req.params;
+      const profileUrl = `${baseUrl}/@${username}`;
       const qr = await generateQRCode(profileUrl);
       return res
         .status(200)
