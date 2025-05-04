@@ -158,6 +158,16 @@ interface ILink {
   logo?: string;
 }
 
+/**
+ * Handles the update of a link.
+ *
+ * @param req - The HTTP request object containing the link ID in the parameters and updated link details in the body.
+ * @param res - The HTTP response object used to send the response back to the client.
+ *
+ * @returns A JSON response indicating the success or failure of the link update process.
+ *          On success, it returns a 200 status with the updated link data.
+ *          On failure, it returns an appropriate error status and message.
+ */
 const updateLink = asyncHandler(
   async (req: ILinkControllerRequest, res: Response) => {
     try {
@@ -244,6 +254,14 @@ const updateLink = asyncHandler(
   }
 );
 
+/**
+ * Handles the retrieval of a user's links.
+ *
+ * @param req - The HTTP request object containing the username in the parameters.
+ * @param res - The HTTP response object used to send the response back to the client.
+ *
+ * @returns A JSON response containing the user's links or an error message.
+ */
 const getUserLinks = asyncHandler(
   async (req: ILinkControllerRequest, res: Response) => {
     try {
@@ -279,6 +297,7 @@ const getUserLinks = asyncHandler(
     }
   }
 );
+
 /**
  * Handles the generation of a QR code for the user's profile URL.
  *

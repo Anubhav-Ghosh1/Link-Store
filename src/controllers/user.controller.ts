@@ -136,6 +136,20 @@ const confirmUserAccount = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Handles user login requests.
+ *
+ * This function processes the login request by validating the input fields,
+ * checking for existing users, validating the password, and generating access
+ * and refresh tokens. It also sets secure HTTP-only cookies for the tokens.
+ *
+ * @param req - The HTTP request object containing the user's login details in the body.
+ * @param res - The HTTP response object used to send the response back to the client.
+ *
+ * @returns A JSON response indicating the success or failure of the login process.
+ *          On success, it returns a 200 status with user details and tokens.
+ *          On failure, it returns an appropriate error status and message.
+ */
 const login = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -199,6 +213,40 @@ const login = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Handles user logout requests.
+ *
+ * This function processes the logout request by clearing the refresh token
+ * from the user's record and removing the refresh token cookie from the response.
+ *
+ * @param req - The HTTP request object containing the user's details in the request.
+ * @param res - The HTTP response object used to send the response back to the client.
+ *
+ * @returns A JSON response indicating the success or failure of the logout process.
+ *          On success, it returns a 200 status with a success message.
+ *          On failure, it returns an appropriate error status and message.
+ */
+const logout = asyncHandler(async (req: ILoginRequest, res: Response) => {
+  try {
+    const userDetails = await user.findById(req.user._id);
+    if (!userDetails) {
+      return res.status(404).json(new ApiResponse(404, {}, "User not found"));
+    }
+    userDetails.refreshToken = "";
+    await userDetails.save();
+    res.clearCookie("refreshToken", { path: "/api/auth/refresh-token" });
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "User logged out successfully"));
+  } catch (e) {
+    if (e instanceof ApiError) {
+      return res
+        .status(e.statusCode)
+        .json(new ApiResponse(e.statusCode, {}, e.message));
+    }
+  }
+});
+
 const getUserDetails = asyncHandler(
   async (req: ILoginRequest, res: Response) => {
     try {
@@ -227,4 +275,4 @@ const getUserDetails = asyncHandler(
   }
 );
 
-export { signup, confirmUserAccount, login, getUserDetails };
+export { signup, confirmUserAccount, login, logout, getUserDetails };
