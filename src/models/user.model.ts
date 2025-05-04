@@ -15,7 +15,7 @@ export interface IUser extends Document {
   refreshToken?: string;
   bio?: string;
   displayName?: string;
-  socialLinks?: Record<string, string>;
+  socialLinks: any[];
   theme?: {
     color: string;
     background: string;

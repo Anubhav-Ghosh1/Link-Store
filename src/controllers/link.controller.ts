@@ -206,4 +206,34 @@ const updateLink = asyncHandler(
   }
 );
 
-export { createLink, deleteLink, updateLink };
+const getUserLinks = asyncHandler(
+  async (req: ILinkControllerRequest, res: Response) => {
+    try
+    {
+        const {username} = req.params;
+        if(!username)
+        {
+            return res.status(400).json(new ApiResponse(400, {}, "Please provide all required fields"));
+        }
+        const user = await User.findOne({username}).select("socialLinks").populate("socialLinks");
+        if(!user)
+        {
+            return res.status(404).json(new ApiResponse(404, {}, "User not found"));
+        }
+        if (user.socialLinks.length === 0)
+        {
+            return res.status(200).json(new ApiResponse(200, [], "User has no links"));
+        }
+        console.log(user);
+        return res.status(200).json(new ApiResponse(200, user, "User links fetched successfully"));
+    }
+    catch(e)
+    {
+        if(e instanceof ApiError)
+        {
+            return res.status(e.statusCode).json(new ApiResponse(e.statusCode, {}, e.message));
+        }
+    }
+  });
+
+export { createLink, deleteLink, updateLink, getUserLinks };
