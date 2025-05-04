@@ -5,6 +5,13 @@ export interface ILink {
   url: string;
   title: string;
   logo: string;
+  metadata: {
+    title?: string;
+    description?: string;
+    image?: string;
+    url?: string;
+    siteName?: string;
+  };
 }
 
 const linkSchema = new Schema<ILink>({
@@ -21,6 +28,13 @@ const linkSchema = new Schema<ILink>({
   title: {
     type: String,
     trim: true,
+  },
+  metadata: {
+    title: { type: String },
+    description: { type: String },
+    image: { type: String },
+    url: { type: String },
+    siteName: { type: String },
   },
   logo: {
     type: String,

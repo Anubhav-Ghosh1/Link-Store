@@ -6,10 +6,20 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
 import QRCode from "qrcode";
+import { getLinkPreview } from "link-preview-js";
 
 export default interface ILinkControllerRequest extends Request {
   user?: any;
 }
+
+export type LinkPreview = {
+  title?: string;
+  description?: string;
+  images?: string[];
+  mediaType?: string;
+  url?: string;
+  siteName?: string;
+};
 
 export const generateQRCode = async (url: string) => {
   return await QRCode.toDataURL(url);
@@ -44,11 +54,22 @@ const createLink = asyncHandler(
         title = undefined;
       }
 
+      let metadata;
+      const preview = (await getLinkPreview(url)) as LinkPreview;
+      metadata = {
+        title: preview.title || "",
+        description: preview.description,
+        image: preview.images?.[0] || "",
+        url: preview.url,
+        siteName: preview.siteName || "",
+      };
+
       const newLink = await Link.create({
         user: userId,
         url,
         title,
         logo,
+        metadata: metadata,
       });
 
       const updateUser = await User.findByIdAndUpdate(userId, {
@@ -174,9 +195,21 @@ const updateLink = asyncHandler(
         Array.isArray(user.socialLinks) &&
         user.socialLinks.includes(linkId)
       ) {
+        let metadata;
+        const preview = (await getLinkPreview(url)) as LinkPreview;
+        metadata = {
+          title: preview.title || "",
+          description: preview.description,
+          image: preview.images?.[0] || "",
+          url: preview.url,
+          siteName: preview.siteName || "",
+        };
         const updatedLink = await Link.findByIdAndUpdate(
           linkId,
-          { ...updatedDetails },
+          {
+            ...updatedDetails,
+            ...(metadata && { metadata }), // only add if metadata exists
+          },
           { new: true }
         );
         if (!updatedLink) {
@@ -254,7 +287,7 @@ const getUserLinks = asyncHandler(
  *
  * @returns A JSON response containing the generated QR code data URL.
  */
-export const getQRCode = asyncHandler(
+const getQRCode = asyncHandler(
   async (req: ILinkControllerRequest, res: Response) => {
     try {
       const baseUrl = process.env.FRONTEND_URL;
@@ -276,4 +309,25 @@ export const getQRCode = asyncHandler(
   }
 );
 
-export { createLink, deleteLink, updateLink, getUserLinks };
+const fetchLinkPreview = async (req: ILinkControllerRequest, res: Response) => {
+  try {
+    const { url } = req.body;
+    const data = await getLinkPreview(url);
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, "Link preview fetched successfully"));
+  } catch (error) {
+    res
+      .status(500)
+      .json(new ApiResponse(500, {}, "Error fetching link preview"));
+  }
+};
+
+export {
+  createLink,
+  deleteLink,
+  updateLink,
+  getUserLinks,
+  getQRCode,
+  fetchLinkPreview,
+};

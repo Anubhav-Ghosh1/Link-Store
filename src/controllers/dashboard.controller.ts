@@ -31,7 +31,13 @@ const getUserInsights = asyncHandler(
       }
       return res
         .status(200)
-        .json(new ApiResponse(200, links, "Links fetched successfully"));
+        .json(
+          new ApiResponse(
+            200,
+            { user: user, links: links },
+            "User and Links fetched successfully"
+          )
+        );
     } catch (e) {
       if (e instanceof ApiError) {
         return res
