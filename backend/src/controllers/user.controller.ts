@@ -30,28 +30,31 @@ export interface ILoginRequest extends Request {
 const signup = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { email, password, username, displayName } = req.body;
-
+    console.log("Body", req.body);
     if (!email || !password || !username) {
       return res
         .status(400)
         .json(new ApiResponse(400, "Please provide all required fields"));
     }
     const existingUser = await user.findOne({ email });
+    console.log("Existing User", existingUser);
     if (existingUser) {
       return res.status(400).json(new ApiResponse(400, "User already exists"));
     }
     const confimationCode = randomUUID();
     const newUser = await user.create({
-      email,
-      password,
-      username,
-      displayName,
-      confimationCode,
+      email:email,
+      password:password,
+      username:username,
+      displayName:displayName,
+      confirmationCode:confimationCode,
     });
     const template = confirmAccount(
-      `${process.env.CLIENT_URL}/confirm-account?otp=${confimationCode}&email=${email}`
+      `${process.env.CLIENT_URL}/user/confirm-account?otp=${confimationCode}&email=${email}`
     );
+    console.log("Template", template);
     await sendMail(email, "Confirm your account", template);
+    console.log("Email sent");
     return res
       .status(201)
       .json(new ApiResponse(201, {}, "User created successfully"));
@@ -64,14 +67,40 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+// const generateAccessAndRefereshTokens = async (
+//   userId: mongoose.Schema.Types.ObjectId
+// ) => {
+//   try {
+//     const userDetails = await user.findById(userId);
+//     console.log("User Details 1", userDetails);
+//     if (!userDetails) {
+//       throw new ApiError(404, "User not found");
+//     }
+//     console.log("User Details 2", userDetails);
+//     const accessToken = userDetails.generateAccessToken();
+//     const refreshToken = userDetails.generateRefreshToken();
+//     console.log("Refresh Token", refreshToken);
+//     userDetails.refreshToken = refreshToken;
+//     await userDetails.save({ validateBeforeSave: false });
+
+//     return { accessToken, refreshToken };
+//   } catch (error) {
+//     throw new ApiError(
+//       500,
+//       "Something went wrong while generating referesh and access token"
+//     );
+//   }
+// };
+
 const generateAccessAndRefereshTokens = async (
   userId: mongoose.Schema.Types.ObjectId
 ) => {
   try {
-    const userDetails = await user.findById(userId);
+    const userDetails = await user.findById(userId) as IUser;
     if (!userDetails) {
       throw new ApiError(404, "User not found");
     }
+
     const accessToken = userDetails.generateAccessToken();
     const refreshToken = userDetails.generateRefreshToken();
 
@@ -80,9 +109,10 @@ const generateAccessAndRefereshTokens = async (
 
     return { accessToken, refreshToken };
   } catch (error) {
+    console.error("Token generation error:", error);
     throw new ApiError(
       500,
-      "Something went wrong while generating referesh and access token"
+      "Something went wrong while generating refresh and access tokens"
     );
   }
 };
@@ -109,6 +139,7 @@ const generateAccessAndRefereshTokens = async (
 const confirmUserAccount = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { otp, email } = req.query;
+    console.log("Query", req.query);
     if (!otp || !email) {
       return res
         .status(400)
@@ -159,7 +190,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
         .json(new ApiResponse(400, "Please provide all required fields"));
     }
     const userDetails = await user.findOne({
-      $and: [{ email }, { password }], // check for username or email
+      $and: [{ email }], // check for username or email
     });
     if (!userDetails) {
       throw new ApiError(404, "User does not exist");
@@ -175,6 +206,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
         .status(400)
         .json(new ApiResponse(400, "Please confirm your account"));
     }
+    console.log("User Details", userDetails);
     const { accessToken, refreshToken } = await Promise.resolve(
       generateAccessAndRefereshTokens(
         userDetails._id as mongoose.Schema.Types.ObjectId

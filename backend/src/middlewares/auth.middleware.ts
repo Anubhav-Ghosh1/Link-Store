@@ -12,14 +12,14 @@ export interface IAuthRequest extends Request {
 export const verifyJWT = asyncHandler(async(req: IAuthRequest,res: Response,next: NextFunction) => {
     try {
         const accessToken = req.cookies?.accessToken  || req.header("Authorization")?.replace("Bearer ","");
-        // console.log("Token",accessToken);
+        console.log("Token 2",accessToken);
     
         if(!accessToken)
         {
             throw new ApiError(401,"Unauthorized request");
         }
         const refreshToken = req.cookies?.refreshToken || req.header("Authorization")?.replace("Bearer ","");
-        const decodedToken = JWT.verify(accessToken,refreshToken);
+        const decodedToken = JWT.verify(accessToken,process.env.JWT_SECRET as string);
         const payload = decodedToken as JwtPayload & { _id: string };
         const user = await User.findById(payload?._id).select("-password -refreshToken");
         if(!user)
