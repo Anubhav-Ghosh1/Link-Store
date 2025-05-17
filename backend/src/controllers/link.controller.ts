@@ -5,11 +5,13 @@ import { Request, Response } from "express";
 import { ApiResponse } from "../utils/ApiResponse";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
+import { uploadOnCloudinary } from "../utils/cloudinary";
 import QRCode from "qrcode";
 import { getLinkPreview } from "link-preview-js";
 
 export default interface ILinkControllerRequest extends Request {
   user?: any;
+  file?: Express.Multer.File;
 }
 
 export type LinkPreview = {
@@ -39,42 +41,53 @@ export const generateQRCode = async (url: string) => {
 const createLink = asyncHandler(
   async (req: ILinkControllerRequest, res: Response) => {
     try {
-      let { url, title, logo } = req.body;
+      let { url, title } = req.body;
       const userId = req.user._id;
-
+      const files = req.files as
+        | { [fieldname: string]: Express.Multer.File[] }
+        | undefined;
+      const logoFilePath = files?.logo?.[0]?.path;
+      console.log(url, title, userId, "File", logoFilePath);
       if (!url) {
         return res
           .status(400)
           .json(new ApiResponse(400, {}, "Please provide all required fields"));
       }
-      if (!logo) {
-        logo = undefined;
+      let uploadedLogo = undefined;
+      if (logoFilePath) {
+        console.log("Hello");
+        uploadedLogo = await uploadOnCloudinary(logoFilePath);
+        console.log("Uploaded Image ", uploadedLogo);
       }
       if (!title) {
-        title = undefined;
+        title = "";
       }
 
-      let metadata;
-      const preview = (await getLinkPreview(url)) as LinkPreview;
-      metadata = {
-        title: preview.title || "",
-        description: preview.description,
-        image: preview.images?.[0] || "",
-        url: preview.url,
-        siteName: preview.siteName || "",
-      };
+      // let metadata;
+      // const preview = (await getLinkPreview(url)) as LinkPreview;
+      // metadata = {
+      //   title: preview.title || "",
+      //   description: preview.description,
+      //   image: preview.images?.[0] || "",
+      //   url: preview.url,
+      //   siteName: preview.siteName || "",
+      // };
+
+      // console.log("Preview ",preview)
 
       const newLink = await Link.create({
         user: userId,
         url,
         title,
-        logo,
-        metadata: metadata,
+        logo: uploadedLogo?.secure_url,
+        // metadata: metadata,
       });
 
       const updateUser = await User.findByIdAndUpdate(userId, {
         $push: { socialLinks: newLink._id },
       });
+
+      console.log("Updated User ", updateUser);
 
       return res
         .status(201)
@@ -205,20 +218,20 @@ const updateLink = asyncHandler(
         Array.isArray(user.socialLinks) &&
         user.socialLinks.includes(linkId)
       ) {
-        let metadata;
-        const preview = (await getLinkPreview(url)) as LinkPreview;
-        metadata = {
-          title: preview.title || "",
-          description: preview.description,
-          image: preview.images?.[0] || "",
-          url: preview.url,
-          siteName: preview.siteName || "",
-        };
+        // let metadata;
+        // const preview = (await getLinkPreview(url)) as LinkPreview;
+        // metadata = {
+        //   title: preview.title || "",
+        //   description: preview.description,
+        //   image: preview.images?.[0] || "",
+        //   url: preview.url,
+        //   siteName: preview.siteName || "",
+        // };
         const updatedLink = await Link.findByIdAndUpdate(
           linkId,
           {
             ...updatedDetails,
-            ...(metadata && { metadata }), // only add if metadata exists
+            // ...(metadata && { metadata }), // only add if metadata exists
           },
           { new: true }
         );
@@ -311,7 +324,7 @@ const getQRCode = asyncHandler(
     try {
       const baseUrl = process.env.FRONTEND_URL;
       const { username } = req.params;
-      const profileUrl = `${baseUrl}/@${username}`;
+      const profileUrl = `${baseUrl}/${username}`;
       const qr = await generateQRCode(profileUrl);
       return res
         .status(200)
@@ -329,19 +342,26 @@ const getQRCode = asyncHandler(
   }
 );
 
-const fetchLinkPreview = async (req: ILinkControllerRequest, res: Response) => {
-  try {
-    const { url } = req.body;
-    const data = await getLinkPreview(url);
-    return res
-      .status(200)
-      .json(new ApiResponse(200, data, "Link preview fetched successfully"));
-  } catch (error) {
-    res
-      .status(500)
-      .json(new ApiResponse(500, {}, "Error fetching link preview"));
+const fetchLinkPreview = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const { url } = req.body;
+      if (!url) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, "Please provide all required fields"));
+      }
+      const data = await getLinkPreview(url);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, data, "Link preview fetched successfully"));
+    } catch (error) {
+      res
+        .status(500)
+        .json(new ApiResponse(500, {}, "Error fetching link preview"));
+    }
   }
-};
+);
 
 export {
   createLink,
