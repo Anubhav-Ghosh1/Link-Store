@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export default function Login() {
@@ -44,9 +45,9 @@ export default function Login() {
 
             // Store token (optionally in localStorage or cookies)
             localStorage.setItem("token", data.token);
-            
+            toast.success("Confirmation code sent successfully");
             // Redirect to dashboard or wherever
-            // router.push("/dashboard");
+            router.push("/confirmation-page");
         } catch (err: any) {
             setError(err.message);
         } finally {

@@ -284,7 +284,7 @@ const getUserDetails = asyncHandler(
     try {
       const userDetails = await user
         .findById(req.user._id)
-        .select("-password -refreshToken");
+        .select("-password -refreshToken").populate("socialLinks");
       if (!userDetails) {
         return res.status(404).json(new ApiResponse(404, "User not found"));
       }

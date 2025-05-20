@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { useUser } from "@/context/UserContext";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -17,6 +18,7 @@ export default function Login() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const ref = useRef(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -38,6 +40,8 @@ export default function Login() {
       });
 
       const data = await res.json();
+      setError(data.data);
+      localStorage.setItem("user", JSON.stringify(data.data.user));
       console.log(data);
       setUser({
         id: data.data.user._id,
@@ -62,11 +66,12 @@ export default function Login() {
 
       // Store token (optionally in localStorage or cookies)
       localStorage.setItem("token", data.data.accessToken);
-
+      toast.success("Login successful");
       // Redirect to dashboard or wherever
-      // router.push("/dashboard");
+      router.push("/user/" + data.data.user._id);
     } catch (err: any) {
-      setError(err.message);
+      ref.current = true;
+      toast.error(error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +119,9 @@ export default function Login() {
             />
           </div>
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {ref.current == true && error && (
+            <p className="text-red-600 text-sm">{error}</p>
+          )}
 
           <button
             type="submit"
