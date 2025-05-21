@@ -12,7 +12,7 @@ export default function Navbar() {
         router.push("/signup");
     }
   return (
-    <div className='w-full flex items-center justify-between px-4 max-w-11/12 py-2 rounded-full border shadow-lg'>
+    <div className='w-full bg-white flex items-center justify-between px-4 max-w-11/12 py-2 rounded-full border shadow-lg'>
         <div className='flex items-center gap-2'>
             {/* Left side */}
             {/* Logo */}

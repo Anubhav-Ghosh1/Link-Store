@@ -68,6 +68,7 @@ import { useUser } from "@/context/UserContext";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import ActiveButton from "../components/ActiveButton";
 
 export default function Dashboard() {
   const { id } = useParams();
@@ -76,6 +77,7 @@ export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
   const [newLink, setNewLink] = useState({ title: "", url: "" });
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
   const fetchUser = async () => {
     try {
@@ -114,7 +116,7 @@ export default function Dashboard() {
       console.error("Error adding link:", error);
     }
   };
-
+  console.log("User", userData);
   useEffect(() => {
     fetchUser();
   }, []);
@@ -130,54 +132,47 @@ export default function Dashboard() {
           <>
             <div className="text-center space-y-2 mb-6">
               <p className="text-lg font-semibold">{userData.username}</p>
-              <p className="text-sm">
-                Status:{" "}
-                <span
-                  className={`font-semibold ${
-                    userData.confirmed ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {userData.confirmed ? "Confirmed" : "Not Confirmed"}
-                </span>
-              </p>
+              <div className="flex items-center justify-center gap-2">
+                <ActiveButton status={userData.confirmed} />
+              </div>
               <p className="text-sm text-gray-600">
                 Profile Views: {userData.profileViews}
               </p>
               <p className="text-sm text-blue-600 break-words">
                 Shareable Link:{" "}
                 <a
-                  href={`${API_URL}/user/${userData._id}`}
+                  href={`${FRONTEND_URL}/user/${userData._id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline"
                 >
-                  {API_URL}/user/{userData._id}
+                  {FRONTEND_URL}/user/{userData._id}
                 </a>
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex flex-col items-center gap-4 justify-center">
               {userData.socialLinks.map((link: any, index: number) => (
                 <div
                   key={index}
-                  className="flex items-center gap-4 p-3 border rounded-lg shadow-sm bg-gray-50"
+                  onClick={() => window.open(link.url, "_blank")}
+                  className="flex items-center relative w-full cursor-pointer hover:scale-[0.99] hover:shadow-md active:scale-[0.99] active:shadow-md transition-all ease-in duration-200 max-w-[400px] p-3 border rounded-full shadow-sm bg-gray-50"
                 >
                   <Image
                     src={`https://www.google.com/s2/favicons?domain=${link.url}&sz=32`}
                     alt={link.title}
-                    width={32}
-                    height={32}
-                    className="rounded-full"
+                    width={36}
+                    height={36}
+                    className="rounded-full absolute"
                   />
-                  <div className="flex-1">
-                    <p className="font-semibold">{link.title}</p>
+                  <div className="w-full flex justify-center">
                     <a
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 underline"
+                      className="text-sm"
                     >
-                      {link.url}
+                      <p>{link.title}</p>
                     </a>
                   </div>
                 </div>
