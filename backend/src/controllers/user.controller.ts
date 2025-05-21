@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { sendMail } from "../utils/mail";
 import { confirmAccount } from "../template/confirm.account.template";
 import mongoose from "mongoose";
+import { uploadOnCloudinary } from "../utils/cloudinary";
 
 export interface ILoginRequest extends Request {
   user?: any;
@@ -43,11 +44,11 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
     }
     const confimationCode = randomUUID();
     const newUser = await user.create({
-      email:email,
-      password:password,
-      username:username,
-      displayName:displayName,
-      confirmationCode:confimationCode,
+      email: email,
+      password: password,
+      username: username,
+      displayName: displayName,
+      confirmationCode: confimationCode,
     });
     const template = confirmAccount(
       `${process.env.CLIENT_URL}/user/confirm-account?otp=${confimationCode}&email=${email}`
@@ -96,7 +97,7 @@ const generateAccessAndRefereshTokens = async (
   userId: mongoose.Schema.Types.ObjectId
 ) => {
   try {
-    const userDetails = await user.findById(userId) as IUser;
+    const userDetails = (await user.findById(userId)) as IUser;
     if (!userDetails) {
       throw new ApiError(404, "User not found");
     }
@@ -166,6 +167,60 @@ const confirmUserAccount = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 });
+
+
+/**
+ * Handles the update of a user's profile picture.
+ *
+ * This function processes a request to update the profile picture of a user.
+ * It retrieves the user's ID from the authenticated request, processes the uploaded
+ * file, uploads the image to a cloud storage service, and updates the user's avatar URL
+ * in the database. If the user is not found, it returns a 404 error response.
+ *
+ * @param req - The incoming request object, which includes the authenticated user's details
+ *              and the uploaded file(s).
+ * @param res - The response object used to send the HTTP response.
+ *
+ * @returns A JSON response indicating the success or failure of the operation.
+ *
+ * @throws ApiError - If an application-specific error occurs during the process.
+ */
+const updateProfilePicture = asyncHandler(
+  async (req: ILoginRequest, res: Response) => {
+    try {
+      const userId = req.user._id;
+      const files = req.files as
+        | { [fieldname: string]: Express.Multer.File[] }
+        | undefined;
+      const logoFilePath = files?.logo?.[0]?.path;
+      const userDetails = await user.findById(userId);
+
+      if (!userDetails) {
+        return res.status(404).json(new ApiResponse(404, "User not found"));
+      }
+
+      let uploadedLogo = undefined;
+      if (logoFilePath) {
+        uploadedLogo = await uploadOnCloudinary(logoFilePath);
+        console.log("Uploaded Image ", uploadedLogo);
+      }
+
+      if (uploadedLogo) {
+        userDetails.avatarUrl = uploadedLogo.secure_url;
+      }
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Profile picture updated"));
+    } catch (e) {
+      if (e instanceof ApiError) {
+        return res
+          .status(e.statusCode)
+          .json(new ApiResponse(e.statusCode, {}, e.message));
+      }
+    }
+  }
+);
 
 /**
  * Handles user login requests.
@@ -284,7 +339,8 @@ const getUserDetails = asyncHandler(
     try {
       const userDetails = await user
         .findById(req.user._id)
-        .select("-password -refreshToken").populate("socialLinks");
+        .select("-password -refreshToken")
+        .populate("socialLinks");
       if (!userDetails) {
         return res.status(404).json(new ApiResponse(404, "User not found"));
       }
@@ -307,4 +363,11 @@ const getUserDetails = asyncHandler(
   }
 );
 
-export { signup, confirmUserAccount, login, logout, getUserDetails };
+export {
+  signup,
+  confirmUserAccount,
+  updateProfilePicture,
+  login,
+  logout,
+  getUserDetails,
+};
