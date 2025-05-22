@@ -34,18 +34,6 @@ function ActiveButton({ status }: { status: string }) {
         </span>
         {isStatusConfirmed ? "Confirmed" : ""}
       </div>
-      {isStatusConfirmed ? (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <p className="text-lg">Currently coding</p>
-            <IoCodeSlash className="text-lg" />
-            <p className="text-lg">with</p>
-            <SiApplemusic className="text-lg" />
-          </div>
-        </div>
-      ) : (
-        ""
-      )}
     </div>
   );
 }
