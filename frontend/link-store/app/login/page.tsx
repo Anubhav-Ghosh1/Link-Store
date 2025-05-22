@@ -32,6 +32,7 @@ export default function Login() {
     setError("");
     setLoading(true);
 
+    let loadingToast = toast.loading("Logging in...")
     try {
       const res = await fetch(`${API_URL}/user/login`, {
         method: "POST",
@@ -68,11 +69,13 @@ export default function Login() {
       localStorage.setItem("token", data.data.accessToken);
       toast.success("Login successful");
       // Redirect to dashboard or wherever
-      router.push("/user/" + data.data.user._id);
+      // router.push("/user/" + data.data.user._id);
+      router.push("/dashboard");
     } catch (err: any) {
       ref.current = true;
       toast.error(error);
     } finally {
+      toast.dismiss(loadingToast);
       setLoading(false);
     }
   };
