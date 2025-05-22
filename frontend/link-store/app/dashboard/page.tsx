@@ -167,7 +167,7 @@ export default function Dashboard() {
                 <p className="text-sm font-semibold text-black break-words">
                   Your Unique Link:{" "}
                   <a
-                    href={`${FRONTEND_URL}/user/${userData._id}`}
+                    href={`${FRONTEND_URL}/user/${userData.username}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-normal text-blue-600"
