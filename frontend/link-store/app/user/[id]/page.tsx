@@ -55,7 +55,7 @@ export default function User() {
   console.log("User ID", id);
   return (
     <div className="flex items-center justify-center w-full h-screen bg-gray-100">
-      <div className="w-[350px] bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="w-[350px] h-[700px] overflow-y-auto bg-white rounded-3xl shadow-lg border-2 border-gray-200 overflow-hidden">
         <div className="bg-gray-50 flex justify-between items-center px-4 py-2 border-b border-gray-200">
           <IoCellular className="text-gray-500" />
           <IoLogoGithub className="text-gray-500" />
