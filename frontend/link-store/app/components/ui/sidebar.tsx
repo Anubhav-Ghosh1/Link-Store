@@ -68,7 +68,7 @@ export default function Navbar({ links, open, setOpen }: NavbarProps) {
   return (
     <div
       className={cn(
-        `flex flex-col ${pathname.includes("user") ? "hidden" : ""} w-full overflow-hidden rounded-md border border-neutral-200 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800`
+        `flex flex-col fixed top-0 ${pathname.includes("user") ? "hidden" : ""} w-full overflow-hidden border border-neutral-200 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800`
       )}
     >
       <nav

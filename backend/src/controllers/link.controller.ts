@@ -121,6 +121,8 @@ const deleteLink = asyncHandler(
     try {
       const { linkId } = req.params;
       const userId = req.user._id;
+      console.log("Link ID", linkId);
+      console.log("User ID", userId);
 
       if (!linkId) {
         return res
@@ -129,6 +131,7 @@ const deleteLink = asyncHandler(
       }
 
       const link = await Link.findById(linkId);
+      console.log("Link", link);
       if (!link) {
         return res.status(404).json(new ApiResponse(404, {}, "Link not found"));
       }
@@ -148,6 +151,7 @@ const deleteLink = asyncHandler(
       const updateUser = await User.findByIdAndUpdate(userId, {
         $pull: { socialLinks: linkId },
       });
+      console.log("Updated User ", updateUser);
 
       return res
         .status(200)
@@ -285,7 +289,7 @@ const getUserLinks = asyncHandler(
           .json(new ApiResponse(400, {}, "Please provide all required fields"));
       }
       const user = await User.findOne({ username })
-        .select("socialLinks")
+        .select("socialLinks username displayName bio")
         .populate("socialLinks");
       if (!user) {
         return res.status(404).json(new ApiResponse(404, {}, "User not found"));

@@ -68,6 +68,7 @@ import { useUser } from "@/context/UserContext";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import Sidebar from "../components/ui/sidebar";
 import { IoCellular } from "react-icons/io5";
 import { IoLogoGithub } from "react-icons/io";
 import ActiveButton from "../components/ActiveButton";
@@ -88,13 +89,16 @@ export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [open, setOpen] = useState(true);
   const [modalData, setModalData] = useState<{
     type: string;
     index: number | null;
+    id: string;
     link: { title: string; url: string };
   }>({
     type: "",
     index: null,
+    id: "",
     link: { title: "", url: "" },
   });
   const [newLink, setNewLink] = useState({ title: "", url: "" });
@@ -121,7 +125,7 @@ export default function Dashboard() {
   const handleAddLink = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/user/add-link`, {
+      const res = await fetch(`${API_URL}/link/create-link`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,13 +135,74 @@ export default function Dashboard() {
       });
 
       const data = await res.json();
-      setUserData(data.data.user); // Update UI
+      await fetchUser();
       setNewLink({ title: "", url: "" });
       setShowForm(false);
     } catch (error) {
       console.error("Error adding link:", error);
     }
   };
+
+  const handleUpdateLink = async (
+    updatedTitle: any,
+    updatedLink: any,
+    linkId: string
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      let updatedValue = {
+        title: updatedTitle,
+        url: updatedLink,
+      };
+      const res = await fetch(`${API_URL}/link/update-link/${linkId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...updatedValue }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        await fetchUser();
+        setShowModal(false);
+      } else {
+        console.error("Error updating link:", data.message);
+      }
+    } catch (error) {
+      console.error("Error updating link:", error);
+    }
+  };
+
+  const deleteLink = async (linkId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/link/delete-link/${linkId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        await fetchUser();
+        setShowModal(false);
+      } else {
+        console.error("Error deleting link:", data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting link:", error);
+    }
+  };
+
+  const pages = [
+    { title: "Dashboard", url: "/dashboard" },
+    { title: "Settings", url: "#" },
+    { title: "Logout", url: "#" },
+  ];
   console.log("User", userData);
   useEffect(() => {
     fetchUser();
@@ -145,8 +210,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4 flex flex-col lg:flex-row lg:justify-center lg:items-start gap-10">
+      <Sidebar links={pages} open={open} setOpen={setOpen} />
       {/* Main Dashboard Section */}
-      <div className="lg:w-2/3 mr-72">
+      <div className="lg:w-2/3 mr-72 mt-12">
         <p className="text-2xl font-bold text-center mb-4 text-gray-800">
           Link Store Dashboard
         </p>
@@ -229,49 +295,55 @@ export default function Dashboard() {
                   {/* Existing Links */}
                   <div className="mt-6">
                     <p className="text-lg font-semibold mb-4">Manage Links</p>
-                    {userData.socialLinks.map((link: any, index: number) => (
-                      <div
-                        key={index}
-                        className="p-3 border rounded-lg mb-2 bg-gray-50"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1 cursor-pointer">
-                            <p className="font-semibold">{link.title}</p>
-                            <p className="text-sm text-gray-600">{link.url}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setModalData({
-                                  type: "update",
-                                  index,
-                                  link,
-                                });
-                                setShowModal(true);
-                              }}
-                              className="bg-blue-500 cursor-pointer font-semibold text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition"
-                            >
-                              Update
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setModalData({
-                                  type: "delete",
-                                  index,
-                                  link: { title: "", url: "" },
-                                });
-                                setShowModal(true);
-                              }}
-                              className="bg-red-600 cursor-pointer font-semibold text-white px-3 py-1 rounded-lg hover:bg-red-700 transition"
-                            >
-                              Delete
-                            </button>
+                    {userData &&
+                      userData.socialLinks?.map((link: any, index: number) => (
+                        <div
+                          key={index}
+                          className="p-3 border rounded-lg mb-2 bg-gray-50"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 cursor-pointer">
+                              <p className="font-semibold">{link.title}</p>
+                              <p className="text-sm text-gray-600">
+                                {link.url}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setModalData({
+                                    type: "update",
+                                    index,
+                                    id: link._id,
+                                    link,
+                                  });
+                                  //   handleUpdateLink(link, link._id);
+                                  setShowModal(true);
+                                }}
+                                className="bg-blue-500 cursor-pointer font-semibold text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition"
+                              >
+                                Update
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setModalData({
+                                    type: "delete",
+                                    index,
+                                    id: link._id,
+                                    link: { title: "", url: "" },
+                                  });
+                                  setShowModal(true);
+                                }}
+                                className="bg-red-600 cursor-pointer font-semibold text-white px-3 py-1 rounded-lg hover:bg-red-700 transition"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               )}
@@ -282,8 +354,8 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile Preview Section */}
-      <div className="fixed w-fit right-10 top-28 justify-center hidden lg:flex">
-        <div className="w-[300px] h-[600px] bg-white rounded-3xl shadow-xl border-4 relative overflow-hidden">
+      <div className="fixed  w-fit right-10 top-32 mt-2 justify-center hidden lg:flex">
+        <div className="w-[300px] h-[600px] bg-white overflow-y-auto rounded-3xl shadow-xl border-4 relative overflow-hidden">
           <div className="bg-gray-100 flex justify-end gap-x-2 h-8 w-full px-2 py-2">
             <IoCellular />
             <IoLogoGithub />
@@ -349,7 +421,12 @@ export default function Dashboard() {
                             }
                           : l
                     );
-                    setUserData({ ...userData, socialLinks: updatedLinks });
+                    handleUpdateLink(
+                      modalData.link.title,
+                      modalData.link.url,
+                      modalData.id
+                    );
+                    // setUserData({ ...userData, socialLinks: updatedLinks });
                     setShowModal(false);
                   }}
                   className="space-y-4"
@@ -413,11 +490,8 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => {
-                      const updatedLinks = userData.socialLinks.filter(
-                        (_: any, i: number) => i !== modalData.index
-                      );
-                      setUserData({ ...userData, socialLinks: updatedLinks });
                       setShowModal(false);
+                      deleteLink(modalData.id);
                     }}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
                   >
