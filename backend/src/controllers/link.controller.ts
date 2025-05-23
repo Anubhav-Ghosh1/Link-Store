@@ -289,7 +289,7 @@ const getUserLinks = asyncHandler(
           .json(new ApiResponse(400, {}, "Please provide all required fields"));
       }
       const user = await User.findOne({ username })
-        .select("socialLinks username displayName bio")
+        .select("socialLinks username displayName bio profileViews")
         .populate("socialLinks");
       if (!user) {
         return res.status(404).json(new ApiResponse(404, {}, "User not found"));
@@ -299,9 +299,10 @@ const getUserLinks = asyncHandler(
           .status(200)
           .json(new ApiResponse(200, [], "User has no links"));
       }
-      user.profileViews = (user.profileViews ?? 0) + 1;
-      await user.save();
-      console.log(user);
+      await User.updateOne(
+        { username },
+        { $inc: { profileViews: 1 } }
+      );
       return res
         .status(200)
         .json(new ApiResponse(200, user, "User links fetched successfully"));
@@ -346,26 +347,24 @@ const getQRCode = asyncHandler(
   }
 );
 
-const fetchLinkPreview = asyncHandler(
-  async (req: Request, res: Response) => {
-    try {
-      const { url } = req.body;
-      if (!url) {
-        return res
-          .status(400)
-          .json(new ApiResponse(400, {}, "Please provide all required fields"));
-      }
-      const data = await getLinkPreview(url);
+const fetchLinkPreview = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
       return res
-        .status(200)
-        .json(new ApiResponse(200, data, "Link preview fetched successfully"));
-    } catch (error) {
-      res
-        .status(500)
-        .json(new ApiResponse(500, {}, "Error fetching link preview"));
+        .status(400)
+        .json(new ApiResponse(400, {}, "Please provide all required fields"));
     }
+    const data = await getLinkPreview(url);
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, "Link preview fetched successfully"));
+  } catch (error) {
+    res
+      .status(500)
+      .json(new ApiResponse(500, {}, "Error fetching link preview"));
   }
-);
+});
 
 export {
   createLink,

@@ -238,7 +238,7 @@ export default function Dashboard() {
                     rel="noopener noreferrer"
                     className="font-normal text-blue-600"
                   >
-                    {FRONTEND_URL}/user/{userData._id}
+                    {FRONTEND_URL}/user/{userData.username}
                   </a>
                 </p>
               </div>
