@@ -101,7 +101,7 @@ export default function Login() {
                         </label>
                         <input
                             type="text"
-                            name="username"
+                            name="displayName"
                             required
                             value={formData.displayName}
                             onChange={handleChange}
@@ -132,7 +132,7 @@ export default function Login() {
                         disabled={loading}
                         className="w-full bg-gray-800 text-white py-2 rounded-lg font-semibold hover:bg-gray-950 transition-all ease-in duration-200"
                     >
-                        {loading ? "Logging in..." : "Login"}
+                        {loading ? "Sigin you..." : "Signin"}
                     </button>
                 </form>
                 <div
